@@ -193,19 +193,57 @@ const ghiNhoThoiQuenDeclaration: FunctionDeclaration = {
 };
 
 // Lazy initialization of Gemini API Client
-function getGeminiAI() {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    console.warn('GEMINI_API_KEY environment variable is not set. Mock fallback will be used if needed.');
-  }
-  return new GoogleGenAI({
+function getGeminiAI(options?: { aiProvider?: string; geminiApiKey?: string; shopaikeyApiKey?: string; shopaikeyBaseUrl?: string }) {
+  let apiKey = process.env.GEMINI_API_KEY;
+  let baseUrl: string | undefined = undefined;
+  
+  const clientOptions: any = {
     apiKey: apiKey || 'dummy-key',
     httpOptions: {
       headers: {
         'User-Agent': 'aistudio-build',
       },
     },
-  });
+  };
+
+  if (options?.aiProvider === 'shopaikey') {
+    apiKey = options.shopaikeyApiKey || apiKey;
+    // The GoogleGenAI SDK automatically appends /v1beta/... or /v1/... to the baseUrl
+    // If the user provided a URL ending in /v1, we can set apiVersion to 'v1' and strip it from baseUrl.
+    let rawBaseUrl = options.shopaikeyBaseUrl || 'https://api.shopaikey.com';
+    let apiVersion = undefined;
+    
+    if (rawBaseUrl.endsWith('/v1')) {
+      rawBaseUrl = rawBaseUrl.slice(0, -3);
+      apiVersion = 'v1';
+    } else if (rawBaseUrl.endsWith('/v1beta')) {
+      rawBaseUrl = rawBaseUrl.slice(0, -7);
+      apiVersion = 'v1beta';
+    } else if (rawBaseUrl.endsWith('/')) {
+      rawBaseUrl = rawBaseUrl.slice(0, -1);
+    }
+    
+    baseUrl = rawBaseUrl;
+    
+    if (apiVersion) {
+      clientOptions.httpOptions.apiVersion = apiVersion;
+    }
+  } else if (options?.aiProvider === 'gemini') {
+    apiKey = options.geminiApiKey || apiKey;
+  }
+
+  if (!apiKey) {
+    console.warn('GEMINI_API_KEY environment variable is not set. Mock fallback will be used if needed.');
+  }
+
+  // update the API key in clientOptions if it changed
+  clientOptions.apiKey = apiKey || 'dummy-key';
+
+  if (baseUrl) {
+    clientOptions.httpOptions.baseUrl = baseUrl;
+  }
+
+  return new GoogleGenAI(clientOptions);
 }
 
 // REST Endpoints
@@ -385,13 +423,18 @@ app.get('/api/schema', (req, res) => {
 // Gemini Chat & Function Calling Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history, systemInstruction, learnedPrompt, learnedMemories } = req.body;
+    const { message, history, systemInstruction, learnedPrompt, learnedMemories, aiProvider, geminiApiKey, shopaikeyApiKey, shopaikeyBaseUrl } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Nội dung tin nhắn không hợp lệ' });
     }
 
-    const ai = getGeminiAI();
+    const ai = getGeminiAI({
+      aiProvider,
+      geminiApiKey,
+      shopaikeyApiKey,
+      shopaikeyBaseUrl,
+    });
 
     // Core System Instruction (Prompt Chính)
     const baseSystemInstruction =

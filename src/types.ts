@@ -99,6 +99,10 @@ export interface AppSettings {
   systemInstruction?: string; // Prompt chính
   learnedPrompt?: string;     // Prompt phụ (Tự động học từ hội thoại)
   learnedMemories?: string[]; // Danh sách các ký ức thói quen đã tự ghi nhận
+  aiProvider?: 'gemini' | 'shopaikey';
+  geminiApiKey?: string;
+  shopaikeyApiKey?: string;
+  shopaikeyBaseUrl?: string;
 }
 
 export const DEFAULT_LEARNED_MEMORIES: string[] = [
@@ -143,6 +147,8 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   systemInstruction: DEFAULT_DOCTOR_SYSTEM_INSTRUCTION,
   learnedPrompt: DEFAULT_LEARNED_MEMORIES.map((m) => `- ${m}`).join('\n'),
   learnedMemories: DEFAULT_LEARNED_MEMORIES,
+  aiProvider: 'gemini',
+  shopaikeyBaseUrl: 'https://api.shopaikey.com/v1',
 };
 
 export interface SystemSchemaDoc {

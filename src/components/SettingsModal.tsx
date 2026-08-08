@@ -243,6 +243,77 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
 
+          {/* SECTION 1.5: Cấu Hình API Trợ Lý AI */}
+          <div className="space-y-3 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
+            <h4 className="font-bold text-slate-200 text-xs flex items-center gap-1.5 text-indigo-300">
+              <Bot className="w-4 h-4 text-indigo-400" />
+              Cấu Hình Nguồn API Trợ Lý AI
+            </h4>
+
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                <input
+                  type="radio"
+                  name="aiProvider"
+                  value="gemini"
+                  checked={formData.aiProvider === 'gemini'}
+                  onChange={() => setFormData({ ...formData, aiProvider: 'gemini' })}
+                  className="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-800 focus:ring-indigo-500"
+                />
+                Google Gemini API
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer text-slate-300">
+                <input
+                  type="radio"
+                  name="aiProvider"
+                  value="shopaikey"
+                  checked={formData.aiProvider === 'shopaikey'}
+                  onChange={() => setFormData({ ...formData, aiProvider: 'shopaikey' })}
+                  className="w-4 h-4 text-indigo-600 bg-slate-900 border-slate-800 focus:ring-indigo-500"
+                />
+                ShopAIKey API
+              </label>
+            </div>
+
+            {formData.aiProvider === 'gemini' && (
+              <div>
+                <label className="block text-slate-300 font-medium mb-1">Google Gemini API Key</label>
+                <input
+                  type="password"
+                  placeholder="AIza..."
+                  value={formData.geminiApiKey || ''}
+                  onChange={(e) => setFormData({ ...formData, geminiApiKey: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+                />
+              </div>
+            )}
+
+            {formData.aiProvider === 'shopaikey' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">ShopAIKey API Key</label>
+                  <input
+                    type="password"
+                    placeholder="sk-..."
+                    value={formData.shopaikeyApiKey || ''}
+                    onChange={(e) => setFormData({ ...formData, shopaikeyApiKey: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-medium mb-1">API Base URL</label>
+                  <input
+                    type="text"
+                    placeholder="https://api.shopaikey.com/v1"
+                    value={formData.shopaikeyBaseUrl || ''}
+                    onChange={(e) => setFormData({ ...formData, shopaikeyBaseUrl: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* SECTION 2: Tùy Chỉnh Danh Mục Công Việc (Categories Dynamic) */}
           <div className="space-y-3.5 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800">
             <div className="flex items-center justify-between gap-2 flex-wrap">

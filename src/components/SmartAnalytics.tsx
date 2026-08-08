@@ -164,6 +164,8 @@ export const SmartAnalytics: React.FC<SmartAnalyticsProps> = ({ events, settings
   });
 
   const totalHours = Object.values(categoryHoursMap).reduce((acc, h) => acc + h, 0) || 1;
+  const studyHours = categoryHoursMap['study'] || 0;
+  const hospitalHours = categoryHoursMap['hospital'] || 0;
 
   // Interventions count
   const interventions = activeEventsForList.filter((e) => e.isIntervention || e.priority === 'P1');

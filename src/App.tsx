@@ -226,6 +226,10 @@ export default function App() {
           systemInstruction: settings.systemInstruction,
           learnedPrompt: settings.learnedPrompt,
           learnedMemories: settings.learnedMemories,
+          aiProvider: settings.aiProvider,
+          geminiApiKey: settings.geminiApiKey,
+          shopaikeyApiKey: settings.shopaikeyApiKey,
+          shopaikeyBaseUrl: settings.shopaikeyBaseUrl,
         }),
       });
 
