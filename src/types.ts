@@ -100,6 +100,7 @@ export interface AppSettings {
   learnedPrompt?: string;     // Prompt phụ (Tự động học từ hội thoại)
   learnedMemories?: string[]; // Danh sách các ký ức thói quen đã tự ghi nhận
   aiProvider?: 'gemini' | 'shopaikey';
+  aiModel?: string;
   geminiApiKey?: string;
   shopaikeyApiKey?: string;
   shopaikeyBaseUrl?: string;
@@ -148,6 +149,7 @@ export const DEFAULT_APP_SETTINGS: AppSettings = {
   learnedPrompt: DEFAULT_LEARNED_MEMORIES.map((m) => `- ${m}`).join('\n'),
   learnedMemories: DEFAULT_LEARNED_MEMORIES,
   aiProvider: 'gemini',
+  aiModel: 'gemini-1.5-flash',
   shopaikeyBaseUrl: 'https://api.shopaikey.com/v1',
 };
 

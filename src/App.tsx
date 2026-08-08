@@ -227,6 +227,7 @@ export default function App() {
           learnedPrompt: settings.learnedPrompt,
           learnedMemories: settings.learnedMemories,
           aiProvider: settings.aiProvider,
+          aiModel: settings.aiModel,
           geminiApiKey: settings.geminiApiKey,
           shopaikeyApiKey: settings.shopaikeyApiKey,
           shopaikeyBaseUrl: settings.shopaikeyBaseUrl,

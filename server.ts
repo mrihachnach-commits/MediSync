@@ -22,26 +22,14 @@ let scheduleEvents: ScheduleEvent[] = [...INITIAL_EVENTS];
 let syncStatus = { ...INITIAL_SYNC_STATUS };
 
 // System Instruction for Gemini AI Assistant
-const DOCTOR_SYSTEM_INSTRUCTION = `
-Bạn là Trợ lý AI Quản lý Lịch và Công việc Chuyên biệt dành cho Bác sĩ Nam, Chẩn đoán Hình ảnh tại Bệnh viện Nội tiết Trung ương.
-
-**Bối cảnh công việc của Bác sĩ**:
-- Ban ngày (T2 - T6): Làm việc tại Bệnh viện (Siêu âm chẩn đoán, Đọc phim CLVT & MRI 3.0T, Can thiệp RFA nhân giáp, Sinh thiết hút chân không VABB u vú, Sinh thiết kim).
-- Buổi tối trong tuần (Từ 19h30): Có 2 buổi học MRI (Khóa 6 tháng), 1 buổi học CLVT chuyên sâu. Các buổi tối còn lại (2-3 buổi/tuần) BẮT BUỘC dành để nghỉ ngơi & tập thể thao.
-- Cuối tuần (Ban ngày T7, CN): Làm thêm tại Phòng khám (Tập trung Siêu âm Tĩnh mạch chi dưới & Cơ xương khớp MSK). Ban ngày nhàn nên có thể tranh thủ tự học.
-- Cuối tuần (Buổi tối T7, CN): Nghỉ ngơi 100% dành cho bản thân và gia đình.
-
-**Quy tắc phân loại Ưu tiên (Ma trận Eisenhower)**:
-- **P1 (Khẩn cấp / Lâm sàng)**: Ca can thiệp RFA giáp, VABB vú, Sinh thiết, Trực cấp cứu, Ca can thiệp lâm sàng tại Bệnh viện.
-- **P2 (Học tập / Chuyên sâu)**: Ca học MRI 6 tháng, Học CLVT chuyên sâu, Hội thảo chuyên môn. Yêu cầu đệm tối thiểu 45 phút sau giờ làm việc ở viện.
-- **P3 (Thường quy)**: Siêu âm thường quy, đọc phim thường quy, làm việc phòng khám ngoài giờ cuối tuần.
-- **P4 (Nghỉ ngơi / Bảo vệ)**: Thời gian nghỉ ngơi tối trong tuần (2-3 buổi), tối T7/CN. TUYỆT ĐỐI không chen lịch học/làm việc vào thời gian P4 trừ khi bác sĩ chủ động yêu cầu!
-
-**Nhiệm vụ của bạn**:
-1. Phân tích thông tin từ tin nhắn/giọng nói tiếng Việt của Bác sĩ.
-2. Tự động gọi các hàm (Function Calling) thích hợp như: \`tao_lich_hen\`, \`cap_nhat_uu_tien\`, \`dong_bo_calendar\`, \`xoa_lich_hen\`, \`tinh_khang_dem\`.
-3. Khi phản hồi, luôn lịch sự, xưng "Em" và gọi "Bác sĩ" hoặc "Anh". Trả lời rõ ràng, kèm tóm tắt các thay đổi lịch đã thực hiện.
-`;
+const DOCTOR_SYSTEM_INSTRUCTION = `Trợ lý AI Quản lý Lịch cho Bác sĩ CĐHA - BV Nội tiết TƯ.
+Bối cảnh: T2-T6 làm viện (siêu âm, MRI, RFA, VABB). Tối (19h30+) học MRI/CLVT hoặc nghỉ (P4). Cuối tuần làm PK (MSK) ban ngày, nghỉ tối.
+Ưu tiên (Eisenhower):
+- P1: Can thiệp lâm sàng (RFA, VABB, Sinh thiết), Cấp cứu.
+- P2: Học tập chuyên sâu. Cần đệm 45p sau giờ làm.
+- P3: Thường quy (Siêu âm, PK).
+- P4: Nghỉ ngơi. TUYỆT ĐỐI ko chen lịch trừ khi y/c.
+Nhiệm vụ: Phân tích tin nhắn, gọi hàm phù hợp, phản hồi lịch sự (xưng Em, gọi Anh/Bác sĩ).`;
 
 // Function Declarations for Gemini Tool Use
 const taoLichHenDeclaration: FunctionDeclaration = {
@@ -423,7 +411,7 @@ app.get('/api/schema', (req, res) => {
 // Gemini Chat & Function Calling Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, history, systemInstruction, learnedPrompt, learnedMemories, aiProvider, geminiApiKey, shopaikeyApiKey, shopaikeyBaseUrl } = req.body;
+    const { message, history, systemInstruction, learnedPrompt, learnedMemories, aiProvider, aiModel, geminiApiKey, shopaikeyApiKey, shopaikeyBaseUrl } = req.body;
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Nội dung tin nhắn không hợp lệ' });
@@ -435,6 +423,8 @@ app.post('/api/chat', async (req, res) => {
       shopaikeyApiKey,
       shopaikeyBaseUrl,
     });
+
+    const selectedModel = aiModel || 'gemini-1.5-flash';
 
     // Core System Instruction (Prompt Chính)
     const baseSystemInstruction =
@@ -461,36 +451,57 @@ app.post('/api/chat', async (req, res) => {
 
     // Combine Prompt Chính and Prompt Phụ
     const activeSystemInstruction = `${baseSystemInstruction}
-
-==================================================
-PROMPT PHỤ - KÝ ỨC AI TỰ HỌC VÀ TỔNG HỢP THÓI QUEN CỦA BÁC SĨ (CẬP NHẬT TỰ ĐỘNG TỪ HỘI THOẠI):
-Dưới đây là các thông tin về thời gian biểu, thói quen, địa điểm làm việc và quy tắc cá nhân mà Bác sĩ đã chia sẻ trong quá trình nhắn tin. Hãy BẮT BUỘC tuân thủ và vận dụng các thông tin này để xử lý công việc chính xác:
+[KÝ ỨC/THÓI QUEN]:
 ${formattedLearnedPrompt}
-==================================================
+[QUY TẮC]: Tự cập nhật thói quen mới bằng hàm \`ghi_nho_thoi_quen\`.`;
 
-**QUY TẮC TỰ HỌC THÓI QUEN MỚI (PROMPT PHỤ)**:
-- Nếu Bác sĩ cung cấp thông tin mới về thời gian làm việc (Ví dụ: "làm việc tại bv thời gian là 7h30-12h và chiều là 13h30-16h30"), thói quen sinh hoạt, địa điểm cố định hoặc quy tắc ưu tiên, bạn HÃY gọi hàm \`ghi_nho_thoi_quen\` để tự động học và ghi nhớ thông tin này vào Prompt Phụ.
-`;
+    // 1. Optimize History (Keep only last 6 messages to save tokens)
+    const MAX_HISTORY = 6;
+    const contents: any[] = [];
+    if (history && Array.isArray(history)) {
+      const prunedHistory = history.slice(-MAX_HISTORY);
+      for (const msg of prunedHistory) {
+        if (msg.text) {
+          contents.push({
+            role: msg.sender === 'user' ? 'user' : 'model',
+            parts: [{ text: msg.text }]
+          });
+        }
+      }
+    }
 
-    // Prepare context summarizing current schedule state
+    // 2. Filter & Condense Schedule Summary (Only relevant upcoming events)
+    // We'll show events for the next 7 days to keep it relevant and concise
+    const now = new Date();
     const currentScheduleSummary = scheduleEvents
+      .filter(e => {
+        // Simple heuristic: if it has a date, check if it's within range
+        // For recurring events without dates, we just include them for now
+        if (!e.date) return true;
+        const eventDate = new Date(e.date);
+        const diffTime = eventDate.getTime() - now.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays >= -1 && diffDays <= 7; // Yesterday to +7 days
+      })
+      .slice(0, 20) // Cap at 20 events to avoid token explosion
       .map(
-        (e) =>
-          `- [${e.id}] T${e.dayOfWeek === 0 ? 'CN' : e.dayOfWeek + 1} (${e.startTime}-${e.endTime}): ${e.title} | Nhóm: ${e.category} | Ưu tiên: ${e.priority}`
+        (e) => `${e.id}|T${e.dayOfWeek === 0 ? 'CN' : e.dayOfWeek + 1}|${e.startTime}-${e.endTime}|${e.title}|${e.priority}`
       )
       .join('\n');
 
-    const promptContext = `
-Dưới đây là thời gian biểu hiện tại của Bác sĩ:
-${currentScheduleSummary}
-
-Tin nhắn mới của Bác sĩ:
-"${message}"
-`;
+    // Append the latest context and message
+    contents.push({
+      role: 'user',
+      parts: [
+        {
+          text: `[Context: Current Schedule]\n${currentScheduleSummary}\n\n[Message]\n${message}`
+        }
+      ]
+    });
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3.6-flash',
-      contents: promptContext,
+      model: selectedModel,
+      contents: contents,
       config: {
         systemInstruction: activeSystemInstruction,
         tools: [

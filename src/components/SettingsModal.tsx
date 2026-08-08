@@ -312,6 +312,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </div>
               </div>
             )}
+
+            <div>
+              <label className="block text-slate-300 font-medium mb-1">Tên Model AI</label>
+              <input
+                type="text"
+                placeholder="gemini-1.5-flash"
+                value={formData.aiModel || ''}
+                onChange={(e) => setFormData({ ...formData, aiModel: e.target.value })}
+                className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-indigo-500 font-mono text-[11px]"
+              />
+              <p className="text-[10px] text-slate-500 mt-1">Gợi ý: gemini-1.5-flash, gemini-1.5-pro, gemini-2.0-flash</p>
+            </div>
           </div>
 
           {/* SECTION 2: Tùy Chỉnh Danh Mục Công Việc (Categories Dynamic) */}
